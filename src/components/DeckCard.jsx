@@ -53,6 +53,7 @@ export default function DeckCard({ deck, onOpen, onDelete }) {
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 'auto' }}>
         <span className="chip" style={{ fontSize: 11.5 }}>{count} fiszek</span>
         <button
+          data-tilt
           className="btn btn-primary"
           style={{ fontSize: 13, padding: '8px 14px', marginLeft: 'auto' }}
           onClick={(e) => { e.stopPropagation(); onOpen?.(); }}

@@ -109,9 +109,35 @@ create policy "users manage own resources"
   with check (auth.uid() = user_id);
 
 
+-- ─── HABITS (definicje nawyków) ──────────────────────────────
+-- Każdy użytkownik ma własne nawyki (wcześniej były zahardkodowane w kodzie).
+-- Dodawanie/usuwanie nawyku = INSERT/DELETE w tej tabeli.
+
+create table if not exists habits (
+  id         uuid default gen_random_uuid() primary key,
+  user_id    uuid references auth.users(id) on delete cascade not null default auth.uid(),
+  label      text not null,
+  icon       text not null default 'check',
+  color      text not null default '#7c5cff',
+  freq          text not null default 'daily' check (freq in ('daily', 'weekly', 'custom')),
+  interval_days integer,                        -- liczba dni dla freq = 'custom' ("co N dni"); null dla daily/weekly
+  tracked       boolean not null default false, -- przypięty jako aktywny streak (max 4 w UI)
+  created_at    timestamptz default now()
+);
+
+alter table habits enable row level security;
+
+create policy "users manage own habits"
+  on habits for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+
 -- ─── HABIT_LOGS ──────────────────────────────────────────────
 -- Jeden wpis = jedno odznaczenie nawyku danego dnia
--- habit IN ('timetolearn'|'python'|'ai'|'project') LUB 'note' (notatka dnia)
+-- habit_id → wskazuje na wiersz w `habits` (check-in nawyku)
+-- habit = 'note' + habit_id NULL → notatka dnia (zostaje po staremu)
+-- ON DELETE CASCADE: usunięcie nawyku kasuje jego check-iny automatycznie
 -- Partial unique index: każdy nawyk można oznaczyć raz dziennie,
 -- notatki ('note') nie mają ograniczenia — można dodać wiele
 
@@ -119,6 +145,7 @@ create table if not exists habit_logs (
   id             uuid default gen_random_uuid() primary key,
   user_id        uuid references auth.users(id) on delete cascade not null default auth.uid(),
   habit          text not null,
+  habit_id       uuid references habits(id) on delete cascade,
   completed_date date not null default current_date,
   note           text,
   created_at     timestamptz default now()
@@ -153,3 +180,17 @@ create policy "users manage own pomodoro logs"
   on pomodoro_logs for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+
+-- ============================================================
+-- MIGRACJE — zmiany na ISTNIEJĄCEJ bazie
+-- ============================================================
+-- Definicje tabel wyżej są już aktualne (świeża instalacja = wszystko gotowe).
+-- Tę sekcję uruchamiasz tylko, gdy tabele JUŻ istnieją i chcesz dograć zmianę
+-- bez przebudowy. Wszystko bezpieczne do wielokrotnego uruchomienia (idempotentne).
+
+-- 2026-06 — nawyki "co N dni" (freq = 'custom' + kolumna interval_days)
+alter table habits add column if not exists interval_days integer;
+alter table habits drop constraint if exists habits_freq_check;
+alter table habits add constraint habits_freq_check
+  check (freq in ('daily', 'weekly', 'custom'));
