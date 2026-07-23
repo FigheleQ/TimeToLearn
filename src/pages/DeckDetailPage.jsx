@@ -6,6 +6,7 @@ import {
 	getFlashcards,
 	createFlashcard,
 	deleteFlashcard,
+	logFlashcardReview,
 } from '../services/supabase';
 
 export default function DeckDetailPage() {
@@ -295,11 +296,13 @@ function StudyMode({ flashcards, onExit }) {
 
 	const markKnown = () => {
 		setKnown([...known, card.id]);
+		logFlashcardReview(card.id, true);
 		goNext();
 	};
 
 	const markUnknown = () => {
 		setUnknown([...unknown, card.id]);
+		logFlashcardReview(card.id, false);
 		goNext();
 	};
 

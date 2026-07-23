@@ -58,6 +58,26 @@ export async function deleteFlashcard(flashcardId) {
 	return supabase.from('flashcards').delete().eq('id', flashcardId);
 }
 
+// ─── Flashcard reviews (postęp do celu dnia) ─────────────────────────────────
+
+// Zapisuje jedną ocenę karty w trybie nauki.
+// known: true = "Umiem", false = "Nie umiem" — oba liczą się do celu dnia.
+export async function logFlashcardReview(flashcardId, known) {
+	return supabase
+		.from('flashcard_reviews')
+		.insert({ flashcard_id: flashcardId, known });
+}
+
+// Liczba ocen z DZISIAJ (do widgetu "Cel dnia"). Zwraca { count, error }.
+export async function getTodayFlashcardReviewCount() {
+	const start = new Date();
+	start.setHours(0, 0, 0, 0);
+	return supabase
+		.from('flashcard_reviews')
+		.select('*', { count: 'exact', head: true })
+		.gte('reviewed_at', start.toISOString());
+}
+
 // ─── Habits (definicje nawyków) ─────────────────────────────────────────────────
 // Nawyki nie są już zahardkodowane — każdy user ma własne w tabeli `habits`.
 // Wzoruj się na getDecks / createDeck / deleteDeck powyżej.
