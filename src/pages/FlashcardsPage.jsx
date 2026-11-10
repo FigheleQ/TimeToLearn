@@ -85,6 +85,7 @@ export default function FlashcardsPage() {
 					</h1>
 				</div>
 				<button
+					data-testid="new-deck-button"
 					className='btn btn-primary'
 					onClick={() => setShowForm((v) => !v)}
 				>
@@ -104,6 +105,7 @@ export default function FlashcardsPage() {
 					</h3>
 					<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 						<input
+							data-testid="deck-title-input"
 							value={title}
 							onChange={(e) => setTitle(e.target.value)}
 							placeholder='Nazwa talii (np. Angielski B2)'
@@ -120,6 +122,7 @@ export default function FlashcardsPage() {
 							}}
 						/>
 						<input
+							data-testid="deck-subject-input"
 							value={subject}
 							onChange={(e) => setSubject(e.target.value)}
 							placeholder='Temat / kategoria (opcjonalnie)'
@@ -145,12 +148,13 @@ export default function FlashcardsPage() {
 					>
 						<button
 							type='button'
+							data-testid="cancel-deck-button"
 							className='btn btn-ghost'
 							onClick={() => setShowForm(false)}
 						>
 							Anuluj
 						</button>
-						<button type='submit' className='btn btn-primary' disabled={saving}>
+						<button data-testid="create-deck-button" type='submit' className='btn btn-primary' disabled={saving}>
 							{saving ? 'Tworzę…' : 'Utwórz talię'}
 						</button>
 					</div>
@@ -230,6 +234,7 @@ function DeckCard({ deck, onOpen, onDelete }) {
 	return (
 		<div
 			data-tilt
+			data-testid="deck-card"
 			className='glass glass-frost'
 			style={{
 				borderRadius: 20,
@@ -260,6 +265,7 @@ function DeckCard({ deck, onOpen, onDelete }) {
 					)}
 				</div>
 				<button
+					data-testid="delete-deck-button"
 					className='iconbtn'
 					style={{ width: 30, height: 30, flexShrink: 0 }}
 					onClick={onDelete}
@@ -272,6 +278,7 @@ function DeckCard({ deck, onOpen, onDelete }) {
 				{count} {count === 1 ? 'fiszka' : 'fiszek'}
 			</div>
 			<button
+				data-testid="open-deck-button"
 				className='btn btn-primary'
 				style={{ justifyContent: 'center', fontSize: 13 }}
 				onClick={onOpen}

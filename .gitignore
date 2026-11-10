@@ -32,3 +32,11 @@ CLAUDE.md
 
 # Earlier UI prototype / export — kept locally only
 testowyprojekt/
+
+# Claude Skills and related files
+.claude
+
+# Cypress — credentials i artefakty
+cypress.env.json
+cypress/screenshots
+cypress/videos
