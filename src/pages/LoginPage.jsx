@@ -49,7 +49,7 @@ export default function LoginPage() {
         <div className="glass glass-frost" style={{ borderRadius: 28, padding: 32 }}>
 
           {error && (
-            <div style={{ marginBottom: 18, padding: '12px 16px', borderRadius: 13,
+            <div data-testid="login-error" style={{ marginBottom: 18, padding: '12px 16px', borderRadius: 13,
               background: 'color-mix(in srgb, #f85149 10%, white)',
               border: '1px solid rgba(248,81,73,.25)',
               fontSize: 13, color: '#c0392b', fontWeight: 500 }}>
@@ -66,6 +66,7 @@ export default function LoginPage() {
                 type="email"
                 id="email"
                 name="email"
+                data-testid="email-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -87,6 +88,7 @@ export default function LoginPage() {
                 type="password"
                 id="password"
                 name="password"
+                data-testid="password-input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -103,6 +105,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
+              data-testid="login-button"
               className="btn btn-primary"
               style={{ width: '100%', justifyContent: 'center', padding: '13px', fontSize: 15, marginTop: 4, opacity: loading ? 0.6 : 1 }}
             >

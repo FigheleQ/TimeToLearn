@@ -114,6 +114,7 @@ export default function Sidebar({ collapsed, active, setActive }) {
 
       {/* sign out */}
       <button
+        data-testid="signout-button"
         onClick={handleSignOut}
         title="Wyloguj"
         style={{

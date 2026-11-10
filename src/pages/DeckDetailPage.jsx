@@ -104,6 +104,7 @@ export default function DeckDetailPage() {
 				</div>
 				{flashcards.length > 0 && (
 					<button
+						data-testid="study-button"
 						className='btn btn-primary'
 						onClick={() => setStudyMode(true)}
 					>
@@ -141,6 +142,7 @@ export default function DeckDetailPage() {
 					style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}
 				>
 					<textarea
+						data-testid="question-input"
 						value={question}
 						onChange={(e) => setQuestion(e.target.value)}
 						placeholder='Pytanie / przód karty'
@@ -159,6 +161,7 @@ export default function DeckDetailPage() {
 						}}
 					/>
 					<textarea
+						data-testid="answer-input"
 						value={answer}
 						onChange={(e) => setAnswer(e.target.value)}
 						placeholder='Odpowiedź / tył karty'
@@ -180,7 +183,7 @@ export default function DeckDetailPage() {
 				<div
 					style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}
 				>
-					<button type='submit' className='btn btn-primary' disabled={saving}>
+					<button data-testid="add-card-button" type='submit' className='btn btn-primary' disabled={saving}>
 						<Icons.plus size={15} /> {saving ? 'Dodaję…' : 'Dodaj fiszkę'}
 					</button>
 				</div>
@@ -216,6 +219,7 @@ export default function DeckDetailPage() {
 						<div
 							key={card.id}
 							data-tilt
+							data-testid="flashcard"
 							className='glass glass-frost'
 							style={{
 								borderRadius: 18,
@@ -255,6 +259,7 @@ export default function DeckDetailPage() {
 								</div>
 							</div>
 							<button
+								data-testid="delete-card-button"
 								className='iconbtn'
 								style={{ width: 30, height: 30 }}
 								onClick={() => handleDelete(card.id)}
@@ -374,7 +379,7 @@ function StudyMode({ flashcards, onExit }) {
 								border: '1px solid rgba(70,214,179,.25)',
 							}}
 						>
-							<div style={{ fontSize: 28, fontWeight: 800, color: '#2faa8c' }}>
+							<div data-testid="summary-known" style={{ fontSize: 28, fontWeight: 800, color: '#2faa8c' }}>
 								{total_known}
 							</div>
 							<div className='muted' style={{ fontSize: 12.5, marginTop: 3 }}>
@@ -390,7 +395,7 @@ function StudyMode({ flashcards, onExit }) {
 								border: '1px solid rgba(248,81,73,.2)',
 							}}
 						>
-							<div style={{ fontSize: 28, fontWeight: 800, color: '#c0392b' }}>
+							<div data-testid="summary-unknown" style={{ fontSize: 28, fontWeight: 800, color: '#c0392b' }}>
 								{total_unknown}
 							</div>
 							<div className='muted' style={{ fontSize: 12.5, marginTop: 3 }}>
@@ -404,7 +409,7 @@ function StudyMode({ flashcards, onExit }) {
 							Zakończ
 						</button>
 						{total_unknown > 0 && (
-							<button className='btn btn-primary' onClick={retryUnknown}>
+							<button data-testid="retry-button" className='btn btn-primary' onClick={retryUnknown}>
 								<Icons.reset size={15} /> Powtórz błędy ({total_unknown})
 							</button>
 						)}
@@ -468,6 +473,7 @@ function StudyMode({ flashcards, onExit }) {
 
 			{/* karta do odwrócenia */}
 			<div
+				data-testid="study-card"
 				onClick={() => setFlipped((f) => !f)}
 				style={{
 					width: '100%',
@@ -562,6 +568,7 @@ function StudyMode({ flashcards, onExit }) {
 			{flipped ? (
 				<div style={{ display: 'flex', gap: 14 }}>
 					<button
+						data-testid="btn-unknown"
 						onClick={markUnknown}
 						style={{
 							padding: '12px 28px',
@@ -581,6 +588,7 @@ function StudyMode({ flashcards, onExit }) {
 						<Icons.close size={16} /> Nie umiem
 					</button>
 					<button
+						data-testid="btn-known"
 						onClick={markKnown}
 						style={{
 							padding: '12px 28px',
