@@ -308,3 +308,106 @@ export async function createResource({ title, url, platform, category }) {
 export async function deleteResource(resourceId) {
 	return supabase.from('resources').delete().eq('id', resourceId);
 }
+
+// ─── Profile (okno "What's new") ─────────────────────────────────────────────
+
+// Profil zalogowanego usera. RLS i tak zwraca tylko własny wiersz,
+// ale filtrujemy po id jawnie, żeby .single() było jednoznaczne.
+export async function getMyProfile() {
+	const {
+		data: { user },
+	} = await supabase.auth.getUser();
+	if (!user) return { data: null, error: new Error('Brak sesji') };
+	return supabase
+		.from('profiles')
+		.select('id, last_seen_release')
+		.eq('id', user.id)
+		.single();
+}
+
+export async function setLastSeenRelease(releaseId) {
+	const {
+		data: { user },
+	} = await supabase.auth.getUser();
+	if (!user) return { data: null, error: new Error('Brak sesji') };
+	return supabase
+		.from('profiles')
+		.update({ last_seen_release: releaseId })
+		.eq('id', user.id);
+}
+
+// ─── Folders (foldery notatek) ───────────────────────────────────────────────
+
+export async function getFolders() {
+	return supabase
+		.from('folders')
+		.select('*, notes(count)')
+		.order('created_at', { ascending: true });
+}
+
+// maybeSingle: cudzy / nieistniejący folder → data === null (RLS go ukrywa), bez błędu
+export async function getFolder(folderId) {
+	return supabase.from('folders').select('*').eq('id', folderId).maybeSingle();
+}
+
+export async function createFolder(name) {
+	return supabase.from('folders').insert({ name }).select().single();
+}
+
+export async function renameFolder(folderId, name) {
+	return supabase
+		.from('folders')
+		.update({ name })
+		.eq('id', folderId)
+		.select()
+		.single();
+}
+
+// notatki znikają same (on delete cascade)
+export async function deleteFolder(folderId) {
+	return supabase.from('folders').delete().eq('id', folderId);
+}
+
+// ─── Notes (notatki w folderze) ──────────────────────────────────────────────
+
+export async function getNotes(folderId) {
+	return supabase
+		.from('notes')
+		.select('*')
+		.eq('folder_id', folderId)
+		.order('position', { ascending: true })
+		.order('created_at', { ascending: true });
+}
+
+// rows: [{ folder_id, title, content, source_name, source_type, position }]
+// Jedno zapytanie dla całej partii importu.
+export async function createNotes(rows) {
+	return supabase.from('notes').insert(rows).select();
+}
+
+export async function updateNote(noteId, changes) {
+	return supabase
+		.from('notes')
+		.update(changes)
+		.eq('id', noteId)
+		.select()
+		.single();
+}
+
+export async function deleteNote(noteId) {
+	return supabase.from('notes').delete().eq('id', noteId);
+}
+
+// items: [{ id, position }] — tylko te notatki, którym zmieniła się pozycja.
+// Nie używamy upsert: przy INSERT ... ON CONFLICT Postgres wymaga wszystkich
+// kolumn NOT NULL (folder_id, title), więc robimy osobne UPDATE-y równolegle.
+// Zwraca { error } pierwszego nieudanego zapytania albo { error: null }.
+export async function updateNotePositions(items) {
+	const results = await Promise.all(
+		items.map(({ id, position }) =>
+			supabase.from('notes').update({ position }).eq('id', id),
+		),
+	);
+	const failed = results.find((r) => r.error);
+	return { error: failed ? failed.error : null };
+}
