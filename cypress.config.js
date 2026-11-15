@@ -95,8 +95,8 @@ export default defineConfig({
               .from('profiles')
               .update({ last_seen_release: RELEASES[0].id })
               .eq('id', userId);
-            // 42703 = brak kolumny (migracja niewgrana) — wtedy okno i tak się nie pokaże
-            if (error && error.code !== '42703') throw new Error(error.message);
+            // 42703 / PGRST204 = brak kolumny (migracja niewgrana) — wtedy okno i tak się nie pokaże
+            if (error && !['42703', 'PGRST204'].includes(error.code)) throw new Error(error.message);
           }
           return null;
         },
