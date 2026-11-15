@@ -11,6 +11,9 @@ import DashboardPage from './pages/DashboardPage';
 import HabitsPage from './pages/HabitsPage';
 import FlashcardsPage from './pages/FlashcardsPage';
 import DeckDetailPage from './pages/DeckDetailPage';
+import NotesPage from './pages/NotesPage';
+import NoteFolderPage from './pages/NoteFolderPage';
+import ChapterPage from './pages/ChapterPage';
 
 export default function App() {
   useEffect(() => initGlassTilt(), []);
@@ -39,6 +42,9 @@ export default function App() {
             <Route path="habits" element={<HabitsPage />} />
             <Route path="flashcards" element={<FlashcardsPage />} />
             <Route path="flashcards/:deckId" element={<DeckDetailPage />} />
+            <Route path="notes" element={<NotesPage />} />
+            <Route path="notes/:folderId" element={<NoteFolderPage />} />
+            <Route path="notes/:folderId/chapter" element={<ChapterPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
