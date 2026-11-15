@@ -4,6 +4,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import RightRail from './RightRail';
+import WhatsNewModal from './WhatsNewModal';
 
 const GLASS_PRESETS = {
   subtle:  { '--glass-blur': '7px',  '--glass-alpha-top': '0.86', '--glass-alpha-bot': '0.66', '--glass-border': '0.8',  '--glass-sat': '125%' },
@@ -34,6 +35,8 @@ export default function AppLayout() {
         ...Object.fromEntries(Object.entries(preset).map(([k, v]) => [k, v])),
       }}
     >
+      <WhatsNewModal />
+
       {/* sidebar — spans both rows */}
       <div style={{ gridColumn: '1', gridRow: '1 / 3' }}>
         <Sidebar collapsed={collapsed} active={active} setActive={setActive} />
