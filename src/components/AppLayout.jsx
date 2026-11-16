@@ -1,10 +1,18 @@
-/* AppLayout.jsx — authenticated shell: sidebar + topbar + main + right rail */
-import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+/* AppLayout.jsx — authenticated shell: sidebar + topbar + main + right rail
+ *
+ * Układ zależy od szerokości ekranu (hooks/useBreakpoint):
+ *   desktop (≥1200) — sidebar | treść | widżety, jak dotąd
+ *   tablet  (768–1199) — sidebar zwinięty do ikon | treść; widżety w panelu wysuwanym z prawej
+ *   phone   (<768) — sama treść; menu wysuwane z lewej (☰), widżety z prawej
+ */
+import { useCallback, useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import RightRail from './RightRail';
 import WhatsNewModal from './WhatsNewModal';
+import Drawer from './Drawer';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 
 const GLASS_PRESETS = {
   subtle:  { '--glass-blur': '7px',  '--glass-alpha-top': '0.86', '--glass-alpha-bot': '0.66', '--glass-border': '0.8',  '--glass-sat': '125%' },
@@ -14,53 +22,101 @@ const GLASS_PRESETS = {
 };
 
 export default function AppLayout() {
+  const bp = useBreakpoint();
+  const isPhone = bp === 'phone';
+  const isDesktop = bp === 'desktop';
+  const location = useLocation();
+
   const [active, setActive] = useState('home');
   const [open, setOpen] = useState(['pomodoro', 'goal', 'calendar', 'notes', 'friends']);
-  const [collapsed, setCollapsed] = useState(false);
+  // zwinięcie sidebara pamiętane osobno: na komputerze domyślnie rozwinięty, na tablecie zwinięty
+  const [collapsedDesktop, setCollapsedDesktop] = useState(false);
+  const [collapsedTablet, setCollapsedTablet] = useState(true);
+  // Panel pamięta, na której stronie i przy jakim ekranie go otwarto. Zmiana strony
+  // albo szerokości (np. obrót telefonu) sprawia, że przestaje być "otwarty" — bez efektów.
+  const here = `${location.pathname}|${bp}`;
+  const [navOpenAt, setNavOpenAt] = useState(null);         // menu na telefonie
+  const [widgetsOpenAt, setWidgetsOpenAt] = useState(null); // widżety na telefonie/tablecie
+  const navOpen = navOpenAt === here;
+  const widgetsOpen = widgetsOpenAt === here;
   const [glass] = useState('liquid');
 
+  const closeNav = useCallback(() => setNavOpenAt(null), []);
+  const closeWidgets = useCallback(() => setWidgetsOpenAt(null), []);
+
+  const collapsed = isDesktop ? collapsedDesktop : collapsedTablet;
+  const toggleSidebar = () => {
+    if (isPhone) setNavOpenAt(navOpen ? null : here);
+    else if (isDesktop) setCollapsedDesktop((c) => !c);
+    else setCollapsedTablet((c) => !c);
+  };
+
   const sideW = collapsed ? 78 : 248;
-  const railOpen = open.length > 0;
+  const railInGrid = isDesktop && open.length > 0;
   const preset = GLASS_PRESETS[glass];
+
+  const columns = isPhone
+    ? 'minmax(0,1fr)'
+    : `${sideW}px minmax(0,1fr)${railInGrid ? ' 348px' : ''}`;
+
+  const rail = (
+    <RightRail
+      open={open}
+      closeWidget={(k) => setOpen(open.filter((x) => x !== k))}
+      openWidget={(k) => setOpen([...open, k])}
+    />
+  );
 
   return (
     <div
+      className='app-shell'
+      data-breakpoint={bp}
       style={{
-        height: '100vh',
-        padding: 18,
+        padding: isPhone ? 10 : bp === 'tablet' ? 14 : 18,
+        paddingTop: isPhone ? 'max(10px, env(safe-area-inset-top))' : undefined,
+        paddingBottom: isPhone ? 'max(10px, env(safe-area-inset-bottom))' : undefined,
+        boxSizing: 'border-box',
         display: 'grid',
-        gap: 16,
-        gridTemplateColumns: `${sideW}px minmax(0,1fr)${railOpen ? ' 348px' : ''}`,
+        gap: isPhone ? 10 : 16,
+        gridTemplateColumns: columns,
         gridTemplateRows: 'auto minmax(0,1fr)',
-        ...Object.fromEntries(Object.entries(preset).map(([k, v]) => [k, v])),
+        ...preset,
       }}
     >
       <WhatsNewModal />
 
-      {/* sidebar — spans both rows */}
-      <div style={{ gridColumn: '1', gridRow: '1 / 3' }}>
-        <Sidebar collapsed={collapsed} active={active} setActive={setActive} />
-      </div>
+      {/* sidebar — kolumna na tablecie/komputerze, wysuwane menu na telefonie */}
+      {isPhone ? (
+        <Drawer open={navOpen} onClose={closeNav} side='left' width={290} label='Menu' testId='nav-drawer'>
+          <Sidebar collapsed={false} active={active} setActive={setActive} />
+        </Drawer>
+      ) : (
+        <div style={{ gridColumn: '1', gridRow: '1 / 3', minHeight: 0 }}>
+          <Sidebar collapsed={collapsed} active={active} setActive={setActive} />
+        </div>
+      )}
 
-      {/* topbar — spans across main + rail columns */}
-      <div style={{ gridColumn: railOpen ? '2 / 4' : '2', gridRow: '1' }}>
-        <TopBar toggleSidebar={() => setCollapsed((c) => !c)} />
+      {/* topbar — nad treścią (i nad widżetami na komputerze) */}
+      <div style={{ gridColumn: isPhone ? '1' : railInGrid ? '2 / 4' : '2', gridRow: '1', minWidth: 0 }}>
+        <TopBar
+          toggleSidebar={toggleSidebar}
+          menuExpanded={isPhone ? navOpen : !collapsed}
+          onOpenWidgets={isDesktop ? null : () => setWidgetsOpenAt(here)}
+        />
       </div>
 
       {/* main content — page renders here via <Outlet> */}
-      <div style={{ gridColumn: '2', gridRow: '2', minHeight: 0 }}>
+      <main style={{ gridColumn: isPhone ? '1' : '2', gridRow: '2', minHeight: 0, minWidth: 0 }}>
         <Outlet />
-      </div>
+      </main>
 
-      {/* right rail — optional widgets */}
-      {railOpen && (
-        <div style={{ gridColumn: '3', gridRow: '2', minHeight: 0 }}>
-          <RightRail
-            open={open}
-            closeWidget={(k) => setOpen(open.filter((x) => x !== k))}
-            openWidget={(k) => setOpen([...open, k])}
-          />
-        </div>
+      {/* widżety — kolumna na komputerze, wysuwany panel na tablecie/telefonie */}
+      {isDesktop ? (
+        railInGrid && <div style={{ gridColumn: '3', gridRow: '2', minHeight: 0 }}>{rail}</div>
+      ) : (
+        <Drawer open={widgetsOpen} onClose={closeWidgets} side='right' width={380} label='Widżety' testId='widgets-drawer'>
+          {rail}
+        </Drawer>
       )}
     </div>
   );

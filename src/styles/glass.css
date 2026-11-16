@@ -562,6 +562,16 @@ body {
 .md-body ol {
 	padding-left: 1.4em;
 }
+/* Tailwind (preflight) zeruje znaczniki list — w treści notatek chcemy je widzieć */
+.md-body ul {
+	list-style: disc;
+}
+.md-body ol {
+	list-style: decimal;
+}
+.md-body li > ul {
+	list-style: circle;
+}
 .md-body a {
 	color: var(--violet-600);
 }

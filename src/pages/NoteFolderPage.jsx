@@ -9,6 +9,7 @@ import { Icons } from '../lib/icons';
 import ConfirmModal from '../components/ConfirmModal';
 import ErrorBox from '../components/ErrorBox';
 import { NotesHelpButton } from '../components/NotesHelp';
+import { useBreakpoint, useIsTouch } from '../hooks/useBreakpoint';
 import { noteWord } from '../utils/notesUi';
 import {
 	getFolder,
@@ -28,6 +29,10 @@ import { titleFromFilename } from '../utils/chapter';
 export default function NoteFolderPage() {
 	const { folderId } = useParams();
 	const navigate = useNavigate();
+	const bp = useBreakpoint();
+	const isTouch = useIsTouch();
+	// na dotyku przeciąganie HTML5 nie działa — wtedy kolejność zmienia się strzałkami
+	const showMoveButtons = isTouch || bp !== 'desktop';
 
 	const [folder, setFolder] = useState(null);
 	const [notes, setNotes] = useState([]); // zawsze posortowane po position
@@ -223,12 +228,19 @@ export default function NoteFolderPage() {
 		dragIndex.current = null;
 		setOverIndex(null);
 
-		if (from === null || from === index) return;
+		if (from === null) return;
+		await moveNote(from, index);
+	}
+
+	// Przestawia notatkę z indeksu `from` na indeks `to` i zapisuje kolejność.
+	// Wspólne dla przeciągania (komputer) i przycisków ↑/↓ (telefon, tablet).
+	async function moveNote(from, to) {
+		if (from === to || to < 0 || to >= notes.length) return;
 
 		const previous = notes; // do cofnięcia przy błędzie
 		const newNotes = [...notes];
 		const [movedNote] = newNotes.splice(from, 1);
-		newNotes.splice(index, 0, movedNote);
+		newNotes.splice(to, 0, movedNote);
 
 		const updatedNotes = newNotes.map((note, idx) => ({
 			...note,
@@ -497,8 +509,10 @@ export default function NoteFolderPage() {
 						className='muted'
 						style={{ fontSize: 12.5, margin: '0 4px 10px' }}
 					>
-						{notes.length} {noteWord(notes.length)} · przeciągnij, żeby zmienić
-						kolejność w Rozdziale
+						{notes.length} {noteWord(notes.length)} ·{' '}
+						{showMoveButtons
+							? 'strzałki ↑ ↓ zmieniają kolejność w Rozdziale'
+							: 'przeciągnij, żeby zmienić kolejność w Rozdziale'}
 					</div>
 					<ol
 						data-testid='notes-list'
@@ -515,7 +529,7 @@ export default function NoteFolderPage() {
 							<li
 								key={note.id}
 								data-testid='note-item'
-								draggable
+								draggable={!showMoveButtons}
 								onDragStart={(e) => handleDragStart(e, index)}
 								onDragOver={(e) => handleDragOver(e, index)}
 								onDrop={(e) => handleDrop(e, index)}
@@ -523,20 +537,22 @@ export default function NoteFolderPage() {
 								className='glass glass-frost'
 								style={{
 									borderRadius: 16,
-									padding: '12px 14px',
 									display: 'flex',
 									alignItems: 'center',
-									gap: 12,
-									cursor: 'grab',
+									gap: showMoveButtons ? 8 : 12,
+									padding: showMoveButtons ? '10px 10px 10px 14px' : '12px 14px',
+									cursor: showMoveButtons ? 'default' : 'grab',
 									outline:
 										overIndex === index
 											? '2px dashed var(--violet-400)'
 											: 'none',
 								}}
 							>
-								<span className='muted' style={{ display: 'grid' }}>
-									<Icons.grip size={18} />
-								</span>
+								{!showMoveButtons && (
+									<span className='muted' style={{ display: 'grid' }}>
+										<Icons.grip size={18} />
+									</span>
+								)}
 								<div style={{ flex: 1, minWidth: 0 }}>
 									<div
 										data-testid='note-title'
@@ -558,6 +574,32 @@ export default function NoteFolderPage() {
 										{note.source_name} · {note.content.slice(0, 120)}
 									</div>
 								</div>
+								{showMoveButtons && (
+									<div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
+										<button
+											type='button'
+											data-testid='move-note-up'
+											className='iconbtn'
+											style={{ width: 30, height: 26, minHeight: 26, borderRadius: 9 }}
+											onClick={() => moveNote(index, index - 1)}
+											disabled={index === 0}
+											aria-label={`Przesuń „${note.title}” wyżej`}
+										>
+											<Icons.chevR size={13} style={{ transform: 'rotate(-90deg)' }} />
+										</button>
+										<button
+											type='button'
+											data-testid='move-note-down'
+											className='iconbtn'
+											style={{ width: 30, height: 26, minHeight: 26, borderRadius: 9 }}
+											onClick={() => moveNote(index, index + 1)}
+											disabled={index === notes.length - 1}
+											aria-label={`Przesuń „${note.title}” niżej`}
+										>
+											<Icons.chevR size={13} style={{ transform: 'rotate(90deg)' }} />
+										</button>
+									</div>
+								)}
 								<button
 									data-testid='edit-note-button'
 									className='iconbtn'

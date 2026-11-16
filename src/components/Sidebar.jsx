@@ -21,7 +21,11 @@ export default function Sidebar({ collapsed, active, setActive }) {
     navigate('/login');
   };
 
-  const currentId = SECTIONS.find((s) => s.path === location.pathname)?.id ?? active;
+  // podstrony też podświetlają swoją sekcję (np. /notes/:id → „Notatki”, /flashcards/:id → „Fiszki”)
+  const currentId =
+    SECTIONS.find((s) =>
+      s.path === '/' ? location.pathname === '/' : location.pathname.startsWith(s.path),
+    )?.id ?? active;
 
   return (
     <aside

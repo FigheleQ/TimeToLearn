@@ -590,6 +590,7 @@ export default function HabitsPage() {
 						</h2>
 					</div>
 					<div
+						className='rs-stack'
 						style={{
 							display: 'grid',
 							gridTemplateColumns: 'repeat(2, 1fr)',
@@ -779,6 +780,7 @@ export default function HabitsPage() {
 					</div>
 				) : (
 					<div
+						className='rs-stack'
 						style={{
 							display: 'grid',
 							gridTemplateColumns: 'repeat(2, 1fr)',
