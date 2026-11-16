@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { initGlassTilt } from './utils/glassTilt';
@@ -11,6 +11,12 @@ import DashboardPage from './pages/DashboardPage';
 import HabitsPage from './pages/HabitsPage';
 import FlashcardsPage from './pages/FlashcardsPage';
 import DeckDetailPage from './pages/DeckDetailPage';
+import NotesPage from './pages/NotesPage';
+import NoteFolderPage from './pages/NoteFolderPage';
+import ChapterPage from './pages/ChapterPage';
+
+// edytor (TipTap + ProseMirror) ładowany dopiero przy wejściu na stronę edycji
+const NoteEditorPage = lazy(() => import('./pages/NoteEditorPage'));
 
 export default function App() {
   useEffect(() => initGlassTilt(), []);
@@ -39,6 +45,17 @@ export default function App() {
             <Route path="habits" element={<HabitsPage />} />
             <Route path="flashcards" element={<FlashcardsPage />} />
             <Route path="flashcards/:deckId" element={<DeckDetailPage />} />
+            <Route path="notes" element={<NotesPage />} />
+            <Route path="notes/:folderId" element={<NoteFolderPage />} />
+            <Route path="notes/:folderId/chapter" element={<ChapterPage />} />
+            <Route
+              path="notes/:folderId/:noteId/edit"
+              element={
+                <Suspense fallback={<div className="muted" style={{ padding: '20px 4px' }}>Ładowanie edytora…</div>}>
+                  <NoteEditorPage />
+                </Suspense>
+              }
+            />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

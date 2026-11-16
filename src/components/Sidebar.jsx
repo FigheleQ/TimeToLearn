@@ -7,6 +7,7 @@ const SECTIONS = [
   { id: 'home',      label: 'Pulpit',      icon: 'grid',     path: '/' },
   { id: 'habits',    label: 'Tracker',     icon: 'flame',    path: '/habits' },
   { id: 'flashcards',label: 'Fiszki',      icon: 'cards',    path: '/flashcards' },
+  { id: 'notes',     label: 'Notatki',     icon: 'note',     path: '/notes' },
   { id: 'stats',     label: 'Statystyki',  icon: 'chart',    path: '/stats' },
 ];
 

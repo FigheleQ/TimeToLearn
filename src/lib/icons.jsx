@@ -37,4 +37,10 @@ export const Icons = {
   sum:     (p) => <Ic {...p} d="M17 5H7l5 7-5 7h10"/>,
   menu:    (p) => <Ic {...p} d="M4 7h16M4 12h16M4 17h16"/>,
   logout:  (p) => <Ic {...p}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></Ic>,
+  upload:  (p) => <Ic {...p}><path d="M12 15.5V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 15v3a2.5 2.5 0 0 0 2.5 2.5h11A2.5 2.5 0 0 0 20 18v-3"/></Ic>,
+  folder:  (p) => <Ic {...p} d="M3.5 7A2.5 2.5 0 0 1 6 4.5h3.6l2.2 2.5H18A2.5 2.5 0 0 1 20.5 9.5V17a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 17z"/>,
+  grip:    (p) => <Ic {...p}><circle cx="9" cy="6" r="1.2" fill="currentColor"/><circle cx="15" cy="6" r="1.2" fill="currentColor"/><circle cx="9" cy="12" r="1.2" fill="currentColor"/><circle cx="15" cy="12" r="1.2" fill="currentColor"/><circle cx="9" cy="18" r="1.2" fill="currentColor"/><circle cx="15" cy="18" r="1.2" fill="currentColor"/></Ic>,
+  download:(p) => <Ic {...p}><path d="M12 4v11.5M7.5 11 12 15.5 16.5 11"/><path d="M4 15v3a2.5 2.5 0 0 0 2.5 2.5h11A2.5 2.5 0 0 0 20 18v-3"/></Ic>,
+  info:    (p) => <Ic {...p}><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r="0.9" fill="currentColor" stroke="none"/></Ic>,
+  pencil:  (p) => <Ic {...p} d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/>,
 };

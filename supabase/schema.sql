@@ -12,6 +12,7 @@ create table if not exists profiles (
   id           uuid references auth.users(id) on delete cascade primary key,
   display_name text,
   avatar_url   text,
+  last_seen_release text,          -- id ostatnio widzianego wpisu "What's new"
   created_at   timestamptz default now()
 );
 
@@ -182,6 +183,78 @@ create policy "users manage own pomodoro logs"
   with check (auth.uid() = user_id);
 
 
+-- ─── FOLDERS (foldery notatek, np. "lekcja1") ───────────────
+
+create table if not exists folders (
+  id         uuid default gen_random_uuid() primary key,
+  user_id    uuid references auth.users(id) on delete cascade not null default auth.uid(),
+  name       text not null,
+  created_at timestamptz default now()
+);
+
+alter table folders enable row level security;
+
+drop policy if exists "users manage own folders" on folders;
+create policy "users manage own folders"
+  on folders for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+
+-- ─── NOTES (sam tekst wyciągnięty z importowanych plików) ────
+-- Oryginalnych plików NIE przechowujemy — tylko content (text).
+-- unique (folder_id, source_name): ponowny import tego samego pliku
+-- w tym samym folderze nadpisuje notatkę zamiast tworzyć duplikat.
+
+create table if not exists notes (
+  id          uuid default gen_random_uuid() primary key,
+  user_id     uuid references auth.users(id) on delete cascade not null default auth.uid(),
+  folder_id   uuid references folders(id) on delete cascade not null,
+  title       text not null,
+  content     text not null default '',
+  source_name text,
+  source_type text,
+  position    integer not null default 0,
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now(),
+  content_format text not null default 'markdown' check (content_format in ('markdown', 'html')),
+  constraint notes_folder_source_unique unique (folder_id, source_name)
+);
+
+create index if not exists notes_folder_position_idx on notes(folder_id, position);
+
+alter table notes enable row level security;
+
+-- with check pilnuje też, żeby folder należał do tego samego użytkownika —
+-- bez tego user B mógłby wstawić swoją notatkę do cudzego folder_id
+drop policy if exists "users manage own notes" on notes;
+create policy "users manage own notes"
+  on notes for all
+  using (auth.uid() = user_id)
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1 from folders
+      where folders.id = notes.folder_id
+        and folders.user_id = auth.uid()
+    )
+  );
+
+-- updated_at aktualizuje się sam przy każdym UPDATE
+create or replace function public.set_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists notes_set_updated_at on notes;
+create trigger notes_set_updated_at
+  before update on notes
+  for each row execute procedure public.set_updated_at();
+
+
 -- ============================================================
 -- MIGRACJE — zmiany na ISTNIEJĄCEJ bazie
 -- ============================================================
@@ -194,3 +267,17 @@ alter table habits add column if not exists interval_days integer;
 alter table habits drop constraint if exists habits_freq_check;
 alter table habits add constraint habits_freq_check
   check (freq in ('daily', 'weekly', 'custom'));
+
+-- 2026-11 — moduł Notatki → Rozdział
+-- Tabele `folders` i `notes` (z RLS i triggerem updated_at) są zdefiniowane wyżej
+-- w sekcjach FOLDERS / NOTES — wklej te dwie sekcje, są idempotentne.
+
+-- 2026-11 — okno "What's new" po zalogowaniu (id ostatnio widzianego wpisu z src/config/whatsNew.js)
+alter table profiles add column if not exists last_seen_release text;
+
+-- 2026-11 — edytor WYSIWYG: notatka może być Markdownem (import .md/.txt) albo HTML-em (po edycji / import .html)
+alter table notes add column if not exists content_format text not null default 'markdown';
+alter table notes drop constraint if exists notes_content_format_check;
+alter table notes add constraint notes_content_format_check
+  check (content_format in ('markdown', 'html'));
+notify pgrst, 'reload schema';
