@@ -4,6 +4,16 @@
 // to on trafia do profiles.last_seen_release.
 export const RELEASES = [
 	{
+		id: '2026-11-password',
+		date: '2026-11-17',
+		title: 'Reset hasła i mocniejsze hasła',
+		items: [
+			'Nie pamiętasz hasła? Na ekranie logowania jest link „Nie pamiętasz hasła?”, który wyśle Ci maila z linkiem do ustawienia nowego.',
+			'Nowe hasła muszą mieć co najmniej 8 znaków, wielką i małą literę, cyfrę oraz znak specjalny. Checklista podczas wpisywania pokazuje, czego jeszcze brakuje.',
+			'Twoje obecne hasło nadal działa. Nowe wymagania dotyczą tylko zakładania konta i zmiany hasła.',
+		],
+	},
+	{
 		id: '2026-11-editor',
 		date: '2026-11-16',
 		title: 'Edytor notatek',

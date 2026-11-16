@@ -2,18 +2,25 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Icons } from '../lib/icons';
+import PasswordChecklist from '../components/PasswordChecklist';
+import { isPasswordStrong } from '../utils/passwordRules';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const { signUp } = useAuth();
 
+  // przycisk aktywny dopiero, gdy hasło spełnia wszystkie wymagania i oba pola są zgodne
+  const canSubmit = isPasswordStrong(password) && password === confirm && !loading;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!canSubmit) return;
     setError(null);
     setLoading(true);
 
@@ -85,6 +92,8 @@ export default function RegisterPage() {
                 type="email"
                 id="email"
                 name="email"
+                data-testid="register-email-input"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -106,10 +115,12 @@ export default function RegisterPage() {
                 type="password"
                 id="password"
                 name="password"
+                data-testid="register-password-input"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="min. 6 znaków"
+                placeholder="••••••••"
                 style={{ width: '100%', padding: '12px 16px', borderRadius: 13, fontSize: 14,
                   fontFamily: 'inherit', border: '1px solid rgba(167,139,250,.3)',
                   background: 'rgba(255,255,255,.6)', outline: 'none', color: 'var(--ink-900)',
@@ -119,11 +130,38 @@ export default function RegisterPage() {
               />
             </div>
 
+            <div>
+              <label htmlFor="confirm-password" style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--ink-700)' }}>
+                Powtórz hasło
+              </label>
+              <input
+                type="password"
+                id="confirm-password"
+                name="confirm-password"
+                data-testid="register-confirm-input"
+                autoComplete="new-password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+                placeholder="••••••••"
+                style={{ width: '100%', padding: '12px 16px', borderRadius: 13, fontSize: 14,
+                  fontFamily: 'inherit', border: '1px solid rgba(167,139,250,.3)',
+                  background: 'rgba(255,255,255,.6)', outline: 'none', color: 'var(--ink-900)',
+                  transition: 'border-color .18s', boxSizing: 'border-box' }}
+                onFocus={(e) => { e.target.style.borderColor = 'var(--violet-500)'; }}
+                onBlur={(e) => { e.target.style.borderColor = 'rgba(167,139,250,.3)'; }}
+              />
+            </div>
+
+            <PasswordChecklist password={password} confirm={confirm} />
+
             <button
               type="submit"
-              disabled={loading}
+              data-testid="register-button"
+              disabled={!canSubmit}
               className="btn btn-primary"
-              style={{ width: '100%', justifyContent: 'center', padding: '13px', fontSize: 15, marginTop: 4, opacity: loading ? 0.6 : 1 }}
+              style={{ width: '100%', justifyContent: 'center', padding: '13px', fontSize: 15, marginTop: 4,
+                opacity: canSubmit ? 1 : 0.55, cursor: canSubmit ? 'pointer' : 'not-allowed' }}
             >
               {loading ? 'Rejestrowanie…' : 'Utwórz konto'}
             </button>

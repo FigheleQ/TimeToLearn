@@ -40,7 +40,23 @@ export function AuthProvider({ children }) {
 		return { error };
 	};
 
-	const value = { user, loading, signIn, signUp, signOut };
+	// Wysyła maila z linkiem do ustawienia nowego hasła.
+	// Link wraca na /reset-password z tokenem w adresie — Supabase sam zakłada z niego sesję.
+	// (adres musi być na liście Redirect URLs w Supabase → Authentication → URL Configuration)
+	const resetPassword = async (email) => {
+		const { error } = await supabase.auth.resetPasswordForEmail(email, {
+			redirectTo: `${window.location.origin}/reset-password`,
+		});
+		return { error };
+	};
+
+	// Ustawia nowe hasło zalogowanemu użytkownikowi (także temu, który wszedł z linku resetu)
+	const updatePassword = async (password) => {
+		const { error } = await supabase.auth.updateUser({ password });
+		return { error };
+	};
+
+	const value = { user, loading, signIn, signUp, signOut, resetPassword, updatePassword };
 
 	return (
 		<AuthContext.Provider value={value}>

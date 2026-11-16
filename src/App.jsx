@@ -7,6 +7,8 @@ import GuestRoute from './components/GuestRoute';
 import AppLayout from './components/AppLayout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import DashboardPage from './pages/DashboardPage';
 import HabitsPage from './pages/HabitsPage';
 import FlashcardsPage from './pages/FlashcardsPage';
@@ -31,6 +33,10 @@ export default function App() {
           {/* public routes — full screen, no shell */}
           <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
           <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+          <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
+          {/* bez GuestRoute/ProtectedRoute: wejście z linku z maila zakłada sesję „resetu”,
+              a brak sesji to osobny komunikat „link wygasł” na tej stronie */}
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* protected routes — rendered inside the sidebar/rail shell */}
           <Route
