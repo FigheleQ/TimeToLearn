@@ -27,7 +27,7 @@ export const NOTES_HELP = [
 		title: 'Kolejność',
 		focus: ['folder'],
 		items: [
-			'Złap notatkę za uchwyt ⋮⋮ i przeciągnij ją wyżej lub niżej. Kolejność zapisuje się od razu.',
+			'Na komputerze złap notatkę za uchwyt ⋮⋮ i przeciągnij ją wyżej lub niżej. Na telefonie i tablecie użyj strzałek ↑ ↓ przy notatce. Kolejność zapisuje się od razu.',
 			'W tej samej kolejności notatki pojawią się w Rozdziale i w pobranym pliku.',
 		],
 	},

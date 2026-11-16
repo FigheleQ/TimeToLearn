@@ -1,0 +1,189 @@
+/* ============================================================
+   TimeToLearn — telefon i tablet
+   Progi spójne z src/hooks/useBreakpoint.js:
+     telefon < 768px · tablet 768–1199px · komputer ≥ 1200px
+   Większość stron ma style inline, więc klasy pomocnicze poniżej
+   używają !important — tylko w media queries, tylko dla układu.
+   ============================================================ */
+
+/* ---- powłoka aplikacji: pełna wysokość także na telefonie z paskiem przeglądarki ---- */
+.app-shell {
+	height: 100vh;
+	height: 100dvh;
+}
+
+/* ---- wysuwane panele (Drawer.jsx) ---- */
+.drawer-root {
+	position: fixed;
+	inset: 0;
+	z-index: 900;
+	pointer-events: none;
+	visibility: hidden;
+	transition: visibility 0s linear 0.26s;
+}
+.drawer-root--open {
+	pointer-events: auto;
+	visibility: visible;
+	transition: visibility 0s;
+}
+.drawer-backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(20, 12, 40, 0.32);
+	backdrop-filter: blur(4px);
+	opacity: 0;
+	transition: opacity 0.22s ease;
+}
+.drawer-root--open .drawer-backdrop {
+	opacity: 1;
+}
+.drawer-panel {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	padding: 10px;
+	padding-top: max(10px, env(safe-area-inset-top));
+	padding-bottom: max(10px, env(safe-area-inset-bottom));
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	box-sizing: border-box;
+	overflow: hidden;
+	transition: transform 0.26s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+.drawer-panel--left {
+	left: 0;
+	transform: translateX(-104%);
+}
+.drawer-panel--right {
+	right: 0;
+	transform: translateX(104%);
+}
+.drawer-root--open .drawer-panel {
+	transform: translateX(0);
+}
+/* sidebar w szufladzie ma stałą wysokość panelu */
+.drawer-panel aside {
+	height: 100% !important;
+	box-sizing: border-box;
+}
+
+/* ---- dotyk: większe pola kliknięcia i brak "lepkiego" hovera ---- */
+@media (pointer: coarse) {
+	.iconbtn {
+		min-width: 40px;
+		min-height: 40px;
+	}
+}
+
+/* ============================================================
+   TELEFON (< 768px)
+   ============================================================ */
+@media (max-width: 767px) {
+	/* iOS powiększa stronę przy fokusie na polu z czcionką < 16px */
+	input,
+	textarea,
+	select,
+	.ProseMirror {
+		font-size: 16px !important;
+	}
+
+	/* siatki dwu-/trzykolumnowe układają się w jedną kolumnę */
+	.rs-stack {
+		grid-template-columns: minmax(0, 1fr) !important;
+	}
+	/* elementy flex w rzędzie przechodzą do kolumny */
+	.rs-column {
+		flex-direction: column !important;
+		align-items: stretch !important;
+	}
+	/* nagłówki stron: tytuł i przyciski zawijają się zamiast wychodzić za ekran */
+	.rs-wrap {
+		flex-wrap: wrap !important;
+	}
+	.rs-hide-phone {
+		display: none !important;
+	}
+	.rs-full-phone {
+		width: 100% !important;
+		max-width: none !important;
+	}
+	/* duże nagłówki stron */
+	.rs-title {
+		font-size: 22px !important;
+	}
+	.rs-hero-title {
+		font-size: 24px !important;
+		line-height: 1.2 !important;
+	}
+
+	/* karty i panele: mniej paddingu, więcej miejsca na treść */
+	.rs-pad {
+		padding: 16px !important;
+	}
+
+	/* modale: przyklejone do dołu ekranu jak arkusz na telefonie */
+	.modal-card {
+		padding: 22px !important;
+		border-radius: 22px !important;
+	}
+
+	/* Rozdział i edytor */
+	.md-body {
+		font-size: 15px;
+	}
+	.md-body h1 {
+		font-size: 22px;
+	}
+	.md-body h2 {
+		font-size: 18px;
+	}
+	.md-body pre {
+		font-size: 13px;
+	}
+	.note-editor-content {
+		min-height: 240px;
+		padding: 14px;
+	}
+}
+
+/* ============================================================
+   TABLET (768–1199px)
+   ============================================================ */
+@media (min-width: 768px) and (max-width: 1199px) {
+	.rs-stack-tablet {
+		grid-template-columns: minmax(0, 1fr) !important;
+	}
+}
+
+/* ---- wysuwane panele: jaśniejsze tło pod „szkłem”, żeby widżety i menu były czytelne ---- */
+.drawer-panel {
+	background: rgba(248, 245, 255, 0.72);
+	backdrop-filter: blur(18px) saturate(140%);
+	-webkit-backdrop-filter: blur(18px) saturate(140%);
+	box-shadow: 0 0 40px -10px rgba(40, 20, 90, 0.35);
+}
+.drawer-panel--left {
+	border-radius: 0 24px 24px 0;
+}
+.drawer-panel--right {
+	border-radius: 24px 0 0 24px;
+}
+
+@media (max-width: 767px) {
+	/* kafelki statystyk na Pulpicie: trzy równe w rzędzie pod tekstem */
+	.rs-stats {
+		width: 100%;
+	}
+	.rs-stats > * {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+}
+
+/* nieaktywne przyciski ikon (np. ↑ przy pierwszej notatce) */
+.iconbtn:disabled {
+	opacity: 0.35;
+	cursor: default;
+	transform: none;
+}

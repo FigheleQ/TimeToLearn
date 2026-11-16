@@ -49,7 +49,7 @@ export default function DashboardPage() {
 		>
 			{/* hero */}
 			<section
-				className='glass glass-frost'
+				className='glass glass-frost rs-column rs-pad'
 				style={{
 					borderRadius: 26,
 					padding: '26px 28px',
@@ -65,7 +65,7 @@ export default function DashboardPage() {
 				<div style={{ flex: 1, position: 'relative' }}>
 					<div className='eyebrow'>Pulpit · plan dnia</div>
 					<h1
-						className='h-display'
+						className='h-display rs-hero-title'
 						style={{ margin: '8px 0 10px', fontSize: 30 }}
 					>
 						Cześć {firstName} —{' '}
@@ -103,7 +103,7 @@ export default function DashboardPage() {
 				</div>
 
 				{/* stats chips */}
-				<div style={{ display: 'flex', gap: 14, position: 'relative' }}>
+				<div className='rs-stats' style={{ display: 'flex', gap: 14, position: 'relative' }}>
 					{[
 						['Passa', '0', 'dni', '#fb6f92', 'flame'],
 						['Dziś', '0', 'fiszek', '#7c5cff', 'check'],
@@ -204,6 +204,7 @@ export default function DashboardPage() {
 				</div>
 			) : (
 				<div
+					className='rs-stack'
 					style={{
 						display: 'grid',
 						gridTemplateColumns: 'repeat(2, 1fr)',
@@ -227,6 +228,7 @@ export default function DashboardPage() {
 
 			{/* activity row */}
 			<div
+				className='rs-stack'
 				style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16 }}
 			>
 				<section className='glass glass-frost' style={{ borderRadius: 22, padding: 22 }}>

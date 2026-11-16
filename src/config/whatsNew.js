@@ -4,6 +4,17 @@
 // to on trafia do profiles.last_seen_release.
 export const RELEASES = [
 	{
+		id: '2026-11-mobile',
+		date: '2026-11-17',
+		title: 'TimeToLearn na telefonie i tablecie',
+		items: [
+			'Na telefonie menu wysuwa się z lewej (☰), a widżety, np. Pomodoro i cel dnia, z prawej (ikona kafelków na górnym pasku).',
+			'Na tablecie menu jest zwinięte do ikon, więc treść ma więcej miejsca.',
+			'Kolejność notatek na ekranach dotykowych zmienisz strzałkami ↑ ↓.',
+			'Formularze nie powiększają już strony przy pisaniu na iPhonie.',
+		],
+	},
+	{
 		id: '2026-11-password',
 		date: '2026-11-17',
 		title: 'Reset hasła i mocniejsze hasła',
