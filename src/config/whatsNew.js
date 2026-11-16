@@ -4,6 +4,17 @@
 // to on trafia do profiles.last_seen_release.
 export const RELEASES = [
 	{
+		id: '2026-11-editor',
+		date: '2026-11-16',
+		title: 'Edytor notatek',
+		items: [
+			'Ołówek ✎ przy notatce otwiera edytor: pogrubienie, kursywa, nagłówki, listy, cytat, kod, kolor tekstu i zakreślacz.',
+			'Rozdział pobierzesz teraz jako .html, który otworzysz w każdej przeglądarce albo wydrukujesz do PDF.',
+			'Import obsługuje też pliki .html, więc pobrany Rozdział wczytasz z powrotem.',
+			'Nie wiesz, od czego zacząć? Na liście folderów jest panel „Jak korzystać z notatek?”, a w folderze i edytorze przycisk ⓘ.',
+		],
+	},
+	{
 		id: '2026-11-notes',
 		date: '2026-11-15',
 		title: 'Notatki → Rozdział',

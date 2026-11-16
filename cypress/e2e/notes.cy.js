@@ -49,18 +49,20 @@ describe('Notatki — foldery (CRUD)', () => {
     cy.get('[data-testid="new-folder-button"]').click();
     cy.get('[data-testid="folder-name-input"]').type(FOLDER);
     cy.get('[data-testid="create-folder-button"]').click();
-    cy.contains('[data-testid="folder-card"]', FOLDER).should('be.visible');
+    cy.contains('[data-testid="folder-card"]', FOLDER).scrollIntoView().should('be.visible');
   });
 
   it('zmienia nazwę folderu (trwale)', () => {
-    cy.contains('[data-testid="folder-card"]', FOLDER).within(() => {
-      cy.get('[data-testid="rename-folder-button"]').click();
-      cy.get('[data-testid="rename-folder-input"]').clear().type(RENAMED);
-      cy.get('[data-testid="save-folder-name-button"]').click();
-    });
-    cy.contains('[data-testid="folder-name"]', RENAMED).should('be.visible');
+    cy.contains('[data-testid="folder-card"]', FOLDER)
+      .find('[data-testid="rename-folder-button"]')
+      .click();
+    // po kliknięciu nazwa przechodzi do inputa (nie jest już tekstem karty),
+    // więc szukamy pola globalnie — edytować można tylko jeden folder naraz
+    cy.get('[data-testid="rename-folder-input"]').clear().type(RENAMED);
+    cy.get('[data-testid="save-folder-name-button"]').click();
+    cy.contains('[data-testid="folder-name"]', RENAMED).scrollIntoView().should('be.visible');
     cy.reload();
-    cy.contains('[data-testid="folder-name"]', RENAMED).should('be.visible');
+    cy.contains('[data-testid="folder-name"]', RENAMED).scrollIntoView().should('be.visible');
   });
 
   it('usuwa folder dopiero po potwierdzeniu', () => {
@@ -178,6 +180,7 @@ describe('Notatki — kolejność (drag & drop)', () => {
       { title: 'C', content: 'trzecia' },
     ]);
     expectTitles(['A', 'B', 'C']);
+    cy.intercept('PATCH', '**/rest/v1/notes*').as('savePosition');
 
     const dataTransfer = new DataTransfer();
     cy.get('[data-testid="note-item"]').eq(0).trigger('dragstart', { dataTransfer });
@@ -187,6 +190,9 @@ describe('Notatki — kolejność (drag & drop)', () => {
     cy.get('[data-testid="note-item"]').eq(0).trigger('dragend', { dataTransfer });
 
     expectTitles(['B', 'C', 'A']);
+    // UI zmienia się od razu (optymistycznie), zapis 3 pozycji trwa chwilę —
+    // reload przerwałby zapytania w locie, więc czekamy na wszystkie trzy
+    cy.wait(['@savePosition', '@savePosition', '@savePosition']);
     cy.reload();
     expectTitles(['B', 'C', 'A']);
   });
@@ -229,21 +235,29 @@ describe('Notatki — Rozdział i eksport', () => {
     cy.window().its('__xss').should('be.undefined');
   });
 
-  it('eksportuje Rozdział do .md', () => {
+  it('eksportuje Rozdział do .html (bez skryptów)', () => {
     cy.visit(`/notes/${folderId}/chapter`);
-    cy.get('[data-testid="export-md-button"]').click();
-    cy.readFile(`cypress/downloads/${CHAPTER}.md`).then((md) => {
-      expect(md).to.match(new RegExp(`^# ${Cypress._.escapeRegExp(CHAPTER)}`));
-      expect(md.indexOf('## Wstęp')).to.be.lessThan(md.indexOf('## Rozwinięcie'));
-      expect(md).to.contain('Tekst z **pogrubieniem**.');
+    cy.get('[data-testid="export-html-button"]').click();
+    cy.readFile(`cypress/downloads/${CHAPTER}.html`).then((html) => {
+      expect(html).to.match(/^<!doctype html>/i);
+      expect(html).to.contain(`<h1>${CHAPTER}</h1>`);
+      expect(html.indexOf('<h2>Wstęp</h2>')).to.be.greaterThan(-1);
+      expect(html.indexOf('<h2>Wstęp</h2>')).to.be.lessThan(html.indexOf('<h2>Rozwinięcie</h2>'));
+      expect(html).to.contain('<strong>pogrubieniem</strong>');
+      expect(html).not.to.contain('<script');
+      expect(html).not.to.contain('onerror');
     });
   });
 
   it('wyeksportowany plik importuje się z powrotem jako jedna notatka', () => {
     seedAndOpen('reimport');
-    importFiles(`cypress/downloads/${CHAPTER}.md`);
+    importFiles(`cypress/downloads/${CHAPTER}.html`);
     cy.get('[data-testid="note-item"]').should('have.length', 1);
     cy.get('[data-testid="note-title"]').should('have.text', CHAPTER);
-    cy.get('[data-testid="note-preview"]').should('contain', `# ${CHAPTER}`);
+    cy.get('[data-testid="note-preview"]').should('contain', CHAPTER);
+    // ponownie zaimportowany Rozdział jest notatką HTML i renderuje się z nagłówkami notatek
+    cy.get('[data-testid="open-chapter-button"]').click();
+    cy.get('[data-testid="chapter-content"] h2').should('contain', 'Wstęp').and('contain', 'Rozwinięcie');
+    cy.get('[data-testid="chapter-content"] strong').should('contain', 'pogrubieniem');
   });
 });

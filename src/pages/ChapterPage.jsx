@@ -2,11 +2,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Icons } from '../lib/icons';
-import Markdown from '../components/Markdown';
+import HtmlContent from '../components/HtmlContent';
 import ErrorBox from '../components/ErrorBox';
 import { getFolder, getNotes } from '../services/supabase';
 import {
-	buildChapterMarkdown,
+	buildChapterHtml,
+	buildChapterDocument,
 	chapterFileName,
 	downloadTextFile,
 } from '../utils/chapter';
@@ -21,11 +22,15 @@ export default function ChapterPage() {
 	const [error, setError] = useState(null);
 
 	useEffect(() => {
+		// ignore: odpowiedź z poprzedniego uruchomienia efektu (StrictMode, zmiana folderId)
+		// nie może nadpisać nowszego stanu, np. kolejności już zmienionej przeciąganiem
+		let ignore = false;
 		const fetch = async () => {
 			const [folderRes, notesRes] = await Promise.all([
 				getFolder(folderId),
 				getNotes(folderId),
 			]);
+			if (ignore) return;
 			if (folderRes.error || notesRes.error) {
 				setError('Nie można pobrać rozdziału');
 			} else {
@@ -35,15 +40,21 @@ export default function ChapterPage() {
 			setLoading(false);
 		};
 		fetch();
+		return () => {
+			ignore = true;
+		};
 	}, [folderId]);
 
-	const markdown = useMemo(
-		() => (folder ? buildChapterMarkdown(folder.name, notes) : ''),
+	const html = useMemo(
+		() => (folder ? buildChapterHtml(folder.name, notes) : ''),
 		[folder, notes],
 	);
 
 	const handleExport = () => {
-		downloadTextFile(chapterFileName(folder.name), markdown);
+		downloadTextFile(
+			chapterFileName(folder.name, 'html'),
+			buildChapterDocument(folder.name, notes),
+		);
 	};
 
 	if (loading) {
@@ -105,12 +116,12 @@ export default function ChapterPage() {
 				</div>
 				<div style={{ display: 'flex', gap: 10 }}>
 					<button
-						data-testid='export-md-button'
+						data-testid='export-html-button'
 						className='btn btn-primary'
 						onClick={handleExport}
 						disabled={notes.length === 0}
 					>
-						<Icons.download size={16} /> Pobierz .md
+						<Icons.download size={16} /> Pobierz .html
 					</button>
 					{/* Etap 2: <button onClick={() => exportChapterToPdf(...)}>Pobierz PDF</button> */}
 				</div>
@@ -127,7 +138,7 @@ export default function ChapterPage() {
 						Ten folder nie ma jeszcze notatek. Zaimportuj pliki w widoku folderu.
 					</p>
 				) : (
-					<Markdown data-testid='chapter-content' source={markdown} />
+					<HtmlContent data-testid='chapter-content' html={html} />
 				)}
 			</article>
 

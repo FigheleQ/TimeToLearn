@@ -5,6 +5,8 @@
  * nie wymaga zmian w stronach, tylko nowego konwertera tutaj.
  */
 
+import { htmlFileToContent } from './noteHtml';
+
 // 1 MB tekstu (UTF-8, w bajtach)
 export const MAX_TEXT_BYTES = 1024 * 1024;
 
@@ -35,6 +37,17 @@ export const CONVERTERS = {
 	md: { sourceType: 'markdown', convert: readPlainText, isText: true },
 	markdown: { sourceType: 'markdown', convert: readPlainText, isText: true },
 	txt: { sourceType: 'text', convert: readPlainText, isText: true },
+	// .html — np. wyeksportowany Rozdział; bierzemy tylko <body>, po sanitizacji
+	html: {
+		sourceType: 'html',
+		convert: async (file) => htmlFileToContent(await file.text()),
+		isText: true,
+	},
+	htm: {
+		sourceType: 'html',
+		convert: async (file) => htmlFileToContent(await file.text()),
+		isText: true,
+	},
 
 	// ─── Etap 2 (jeszcze nieaktywne) ─────────────────────────────────────────
 	// Ciężkie biblioteki ładujemy dynamicznym import(), żeby nie trafiły

@@ -379,16 +379,35 @@ export async function getNotes(folderId) {
 		.order('created_at', { ascending: true });
 }
 
+// Format treści wynika z typu źródła: plik .html → 'html', .md/.txt → 'markdown'.
+// Edytor WYSIWYG zapisuje zawsze content_format: 'html' (podaje go jawnie).
+function formatFromSourceType(sourceType) {
+	return sourceType === 'html' ? 'html' : 'markdown';
+}
+
+export async function getNote(noteId) {
+	return supabase.from('notes').select('*').eq('id', noteId).maybeSingle();
+}
+
 // rows: [{ folder_id, title, content, source_name, source_type, position }]
 // Jedno zapytanie dla całej partii importu.
 export async function createNotes(rows) {
-	return supabase.from('notes').insert(rows).select();
+	const withFormat = rows.map((row) => ({
+		content_format: formatFromSourceType(row.source_type),
+		...row,
+	}));
+	return supabase.from('notes').insert(withFormat).select();
 }
 
+// Ponowny import (nadpisanie) podaje source_type → dopasowujemy też content_format
 export async function updateNote(noteId, changes) {
+	const withFormat =
+		'source_type' in changes && !('content_format' in changes)
+			? { ...changes, content_format: formatFromSourceType(changes.source_type) }
+			: changes;
 	return supabase
 		.from('notes')
-		.update(changes)
+		.update(withFormat)
 		.eq('id', noteId)
 		.select()
 		.single();

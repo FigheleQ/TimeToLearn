@@ -217,6 +217,7 @@ create table if not exists notes (
   position    integer not null default 0,
   created_at  timestamptz default now(),
   updated_at  timestamptz default now(),
+  content_format text not null default 'markdown' check (content_format in ('markdown', 'html')),
   constraint notes_folder_source_unique unique (folder_id, source_name)
 );
 
@@ -273,3 +274,10 @@ alter table habits add constraint habits_freq_check
 
 -- 2026-11 — okno "What's new" po zalogowaniu (id ostatnio widzianego wpisu z src/config/whatsNew.js)
 alter table profiles add column if not exists last_seen_release text;
+
+-- 2026-11 — edytor WYSIWYG: notatka może być Markdownem (import .md/.txt) albo HTML-em (po edycji / import .html)
+alter table notes add column if not exists content_format text not null default 'markdown';
+alter table notes drop constraint if exists notes_content_format_check;
+alter table notes add constraint notes_content_format_check
+  check (content_format in ('markdown', 'html'));
+notify pgrst, 'reload schema';

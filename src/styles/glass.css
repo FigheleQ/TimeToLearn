@@ -598,3 +598,21 @@ body {
 .md-body img {
 	display: none; /* moduł przechowuje sam tekst — obrazki z MD nie są wyświetlane */
 }
+
+/* ---- Edytor notatek (TipTap) ---- */
+.note-editor-content {
+	min-height: 320px;
+	padding: 18px 20px;
+	border-radius: 16px;
+	background: rgba(255, 255, 255, 0.7);
+	border: 1px solid rgba(167, 139, 250, 0.25);
+	outline: none;
+}
+.note-editor-content:focus {
+	border-color: var(--violet-400);
+	box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2);
+}
+.md-body mark {
+	padding: 0 0.15em;
+	border-radius: 3px;
+}

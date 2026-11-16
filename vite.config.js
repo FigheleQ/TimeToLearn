@@ -7,4 +7,18 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  // TipTap + ProseMirror pakowane z góry, razem — inaczej Vite odkrywa je dopiero przy wejściu
+  // na (lazy) stronę edytora, przebudowuje zależności i w przeglądarce lądują DWIE kopie
+  // prosemirror-model (błąd "Cannot read properties of null (reading 'cached')")
+  optimizeDeps: {
+    include: [
+      '@tiptap/react',
+      '@tiptap/starter-kit',
+      '@tiptap/extension-text-style',
+      '@tiptap/extension-highlight',
+      '@tiptap/pm/state',
+      '@tiptap/pm/view',
+      '@tiptap/pm/model',
+    ],
+  },
 })

@@ -22,8 +22,14 @@ import { getMyProfile, setLastSeenRelease } from '../services/supabase';
  *   releases = []      → []
  */
 function getUnseenReleases(releases, lastSeenId) {
-	// TODO: zaimplementuj według przykładów powyżej
-	return [];
+	if (releases.length === 0) return [];
+
+	const seenIndex = releases.findIndex((release) => release.id === lastSeenId);
+
+	// null (nowe konto) albo id, którego już nie ma → tylko najnowszy wpis
+	if (seenIndex === -1) return [releases[0]];
+
+	return releases.slice(0, seenIndex);
 }
 
 export default function WhatsNewModal() {

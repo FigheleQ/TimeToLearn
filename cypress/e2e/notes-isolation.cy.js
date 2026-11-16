@@ -40,7 +40,7 @@ describe('Notatki — izolacja danych między użytkownikami (RLS)', () => {
   it('użytkownik A widzi swój folder', () => {
     cy.login(Cypress.env('USER_A_EMAIL'), Cypress.env('USER_A_PASSWORD'));
     cy.visit('/notes');
-    cy.contains('[data-testid="folder-card"]', FOLDER_A).should('be.visible');
+    cy.contains('[data-testid="folder-card"]', FOLDER_A).scrollIntoView().should('be.visible');
   });
 
   it('użytkownik B nie widzi folderu A na liście', () => {

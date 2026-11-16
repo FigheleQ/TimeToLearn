@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Icons } from '../lib/icons';
 import ConfirmModal from '../components/ConfirmModal';
 import ErrorBox from '../components/ErrorBox';
+import { NotesHelpPanel } from '../components/NotesHelp';
 import { inputStyle, noteWord } from '../utils/notesUi';
 import {
 	getFolders,
@@ -26,13 +27,18 @@ export default function NotesPage() {
 	const [toDelete, setToDelete] = useState(null); // folder czekający na potwierdzenie
 
 	useEffect(() => {
+		let ignore = false; // spóźniona odpowiedź z 1. uruchomienia (StrictMode) nie nadpisze stanu
 		const fetch = async () => {
 			const { data, error } = await getFolders();
+			if (ignore) return;
 			if (error) setError('Nie można pobrać folderów');
 			else setFolders(data ?? []);
 			setLoading(false);
 		};
 		fetch();
+		return () => {
+			ignore = true;
+		};
 	}, []);
 
 	const handleCreate = async (e) => {
@@ -120,6 +126,9 @@ export default function NotesPage() {
 					<Icons.plus size={16} /> Nowy folder
 				</button>
 			</div>
+
+			{/* nowy użytkownik (bez folderów) widzi pomoc rozwiniętą, pozostali — zwiniętą */}
+			{!loading && <NotesHelpPanel defaultCollapsed={folders.length > 0} />}
 
 			{showForm && (
 				<form

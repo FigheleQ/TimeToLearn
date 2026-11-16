@@ -51,7 +51,7 @@ export default defineConfig({
         },
 
         // tworzy folder z notatkami dla wskazanego usera, zwraca { folderId }
-        // notes: [{ title, content, source_name? }] — position = indeks w tablicy
+        // notes: [{ title, content, source_name?, content_format? }] — position = indeks w tablicy
         async seedFolderWithNotes({ email, name, notes = [] }) {
           const userId = await userIdByEmail(email);
           const { data: folder, error } = await admin
@@ -68,7 +68,8 @@ export default defineConfig({
                 title: n.title,
                 content: n.content ?? '',
                 source_name: n.source_name ?? `${n.title}.md`,
-                source_type: 'markdown',
+                source_type: n.content_format === 'html' ? 'html' : 'markdown',
+                content_format: n.content_format ?? 'markdown',
                 position: i,
               })),
             );

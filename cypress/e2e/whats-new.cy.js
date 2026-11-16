@@ -16,8 +16,11 @@ describe("What's new — okno nowości po zalogowaniu", () => {
       .should('have.length', 1)
       .and('contain', RELEASES[0].title);
 
+    // zapis do bazy idzie asynchronicznie po zamknięciu — czekamy na PATCH, zanim sprawdzimy bazę
+    cy.intercept('PATCH', '**/rest/v1/profiles*').as('saveSeen');
     cy.get('[data-testid="whats-new-modal-confirm"]').click();
     cy.get('[data-testid="whats-new-modal"]').should('not.exist');
+    cy.wait('@saveSeen').its('response.statusCode').should('be.oneOf', [200, 204]);
 
     cy.task('getLastSeenRelease', { email: email() }).should('eq', RELEASES[0].id);
 

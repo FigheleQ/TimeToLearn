@@ -8,6 +8,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Icons } from '../lib/icons';
 import ConfirmModal from '../components/ConfirmModal';
 import ErrorBox from '../components/ErrorBox';
+import { NotesHelpButton } from '../components/NotesHelp';
 import { noteWord } from '../utils/notesUi';
 import {
 	getFolder,
@@ -46,11 +47,15 @@ export default function NoteFolderPage() {
 	const [toDelete, setToDelete] = useState(null);
 
 	useEffect(() => {
+		// ignore: odpowiedź z poprzedniego uruchomienia efektu (StrictMode, zmiana folderId)
+		// nie może nadpisać nowszego stanu, np. kolejności już zmienionej przeciąganiem
+		let ignore = false;
 		const fetch = async () => {
 			const [folderRes, notesRes] = await Promise.all([
 				getFolder(folderId),
 				getNotes(folderId),
 			]);
+			if (ignore) return;
 			if (folderRes.error || notesRes.error) {
 				setError('Nie można pobrać folderu');
 			} else {
@@ -60,6 +65,9 @@ export default function NoteFolderPage() {
 			setLoading(false);
 		};
 		fetch();
+		return () => {
+			ignore = true;
+		};
 	}, [folderId]);
 
 	// ─── Import ────────────────────────────────────────────────────────────────
@@ -71,18 +79,25 @@ export default function NoteFolderPage() {
 	async function readFiles(fileList) {
 		const converted = [];
 		const skippedFiles = [];
-
-		// TODO: przejdź po Array.from(fileList) i dla każdego pliku:
-		//   - await convertFileToText(file) → { text, sourceType }
-		//   - sukces: dodaj do converted { sourceName: file.name, title: titleFromFilename(file.name),
-		//     content: text, sourceType }
-		//   - błąd (try/catch): dodaj do skippedFiles { name: file.name, reason: err.message }
-		//     (err.reason === 'format' | 'size' — komunikat jest już czytelny)
-		// TODO: ten sam file.name dwa razy w jednej partii (import katalogu z podfolderami)?
-		//   Zostaw ostatni, a wcześniejszy wrzuć do skippedFiles z powodem „duplikat nazwy w imporcie”.
-
+		for (const file of Array.from(fileList)) {
+			try {
+				const { text, sourceType } = await convertFileToText(file);
+				converted.push({
+					sourceName: file.name,
+					title: titleFromFilename(file.name),
+					content: text,
+					sourceType,
+				});
+			} catch (err) {
+				skippedFiles.push({ name: file.name, reason: err.message });
+				continue;
+			}
+		}
 		return { converted, skipped: skippedFiles };
 	}
+	// TODO: ten sam file.name dwa razy w jednej partii (import katalogu z podfolderami)?
+	//   Zostaw ostatni, a wcześniejszy wrzuć do skippedFiles z powodem „duplikat nazwy w imporcie”.
+	readFiles.skipDuplicates = true;
 
 	// Wywoływane przez oba inputy (pliki i katalog).
 	async function handleFiles(fileList) {
@@ -93,12 +108,24 @@ export default function NoteFolderPage() {
 		const { converted, skipped: skippedFiles } = await readFiles(fileList);
 		setSkipped(skippedFiles);
 
-		// TODO: podziel `converted` na:
-		//   - fresh: pliki, których source_name NIE ma jeszcze w `notes`
-		//   - conflicts: [{ note, incoming }] — note = istniejąca notatka o tym samym source_name
-		// TODO: jeśli są konflikty → setPendingOverwrite({ fresh, conflicts }) i zakończ
-		//   (modal poniżej zapyta użytkownika; dalej poprowadzą go onConfirm / onCancel)
-		// TODO: jeśli konfliktów brak → await saveImport(fresh, [])
+		const fresh = [];
+		const conflicts = [];
+		converted.forEach((incoming) => {
+			const existingNote = notes.find(
+				(n) => n.source_name === incoming.sourceName,
+			);
+			if (existingNote) {
+				conflicts.push({ note: existingNote, incoming });
+			} else {
+				fresh.push(incoming);
+			}
+		});
+
+		if (conflicts.length > 0) {
+			setPendingOverwrite({ fresh, conflicts });
+		} else {
+			await saveImport(fresh, []);
+		}
 
 		setImporting(false);
 	}
@@ -106,16 +133,50 @@ export default function NoteFolderPage() {
 	// Zapis do bazy.
 	//   fresh       — nowe notatki (INSERT jednym zapytaniem przez createNotes)
 	//   toOverwrite — [{ note, incoming }] do nadpisania (UPDATE przez updateNote)
+
 	async function saveImport(fresh, toOverwrite) {
-		// TODO: nowe notatki dostają pozycje ZA ostatnią istniejącą:
-		//   start = max(position) + 1 (albo 0, gdy folder pusty), potem start+1, start+2…
-		// TODO: createNotes(fresh.map(...)) z polami:
-		//   folder_id, title, content, source_name, source_type, position
-		// TODO: dla każdego z toOverwrite → updateNote(note.id, { title, content, source_type })
-		//   NIE zmieniaj position — nadpisana notatka zostaje na swoim miejscu
-		// TODO: obsłuż { error } z obu wywołań → setError('Nie udało się zapisać notatek')
-		// TODO: zaktualizuj stan `notes`: podmień nadpisane, dopisz nowe na końcu
-		//   (wynik musi zostać posortowany po position)
+		const start =
+			notes.length > 0 ? Math.max(...notes.map((n) => n.position)) + 1 : 0;
+
+		// nowe notatki — jednym zapytaniem; data = wiersze z bazy z PRAWDZIWYM id
+		let created = [];
+		if (fresh.length > 0) {
+			const { data, error } = await createNotes(
+				fresh.map((note, index) => ({
+					folder_id: folderId,
+					title: note.title,
+					content: note.content,
+					source_name: note.sourceName,
+					source_type: note.sourceType,
+					position: start + index,
+				})),
+			);
+			if (error) {
+				setError('Nie udało się zapisać notatek');
+				return;
+			}
+			created = data;
+		}
+
+		// nadpisania — position zostaje bez zmian
+		const updatedNotes = [...notes];
+		for (const { note, incoming } of toOverwrite) {
+			const { data, error } = await updateNote(note.id, {
+				title: incoming.title,
+				content: incoming.content,
+				source_type: incoming.sourceType,
+			});
+			if (error) {
+				setError('Nie udało się zapisać notatek');
+				continue;
+			}
+			const index = updatedNotes.findIndex((n) => n.id === note.id);
+			if (index !== -1) updatedNotes[index] = data;
+		}
+
+		setNotes(
+			[...updatedNotes, ...created].sort((a, b) => a.position - b.position),
+		);
 	}
 
 	// Decyzja w modalu kolizji
@@ -123,9 +184,17 @@ export default function NoteFolderPage() {
 		const { fresh, conflicts } = pendingOverwrite;
 		setPendingOverwrite(null);
 
-		// TODO: overwrite === true  → saveImport(fresh, conflicts)
-		// TODO: overwrite === false → saveImport(fresh, []) i dopisz konflikty do `skipped`
-		//   z powodem „już istnieje w folderze (nie nadpisano)”
+		overwrite === true
+			? await saveImport(fresh, conflicts)
+			: await saveImport(fresh, []);
+		overwrite === false &&
+			setSkipped([
+				...skipped,
+				...conflicts.map(({ note }) => ({
+					name: note.source_name,
+					reason: 'już istnieje w folderze (nie nadpisano)',
+				})),
+			]);
 
 		setImporting(false);
 	}
@@ -144,8 +213,8 @@ export default function NoteFolderPage() {
 	}
 
 	function handleDragOver(e, index) {
-		// TODO: e.preventDefault() — bez tego przeglądarka NIE wywoła onDrop na tym elemencie
-		// TODO: setOverIndex(index), żeby podświetlić miejsce upuszczenia
+		e.preventDefault();
+		setOverIndex(index);
 	}
 
 	async function handleDrop(e, index) {
@@ -154,11 +223,33 @@ export default function NoteFolderPage() {
 		dragIndex.current = null;
 		setOverIndex(null);
 
-		// TODO: jeśli from === null albo from === index → nic nie rób
-		// TODO: zbuduj nową tablicę (kopia!): wytnij element z `from`, wstaw na `index`
-		// TODO: nadaj nowe pozycje 0..n-1 i zapamiętaj, którym notatkom się zmieniły
-		// TODO: optymistycznie setNotes(nowa), potem await updateNotePositions(zmienione)
-		// TODO: przy błędzie: przywróć poprzednią tablicę + setError('Nie udało się zapisać kolejności')
+		if (from === null || from === index) return;
+
+		const previous = notes; // do cofnięcia przy błędzie
+		const newNotes = [...notes];
+		const [movedNote] = newNotes.splice(from, 1);
+		newNotes.splice(index, 0, movedNote);
+
+		const updatedNotes = newNotes.map((note, idx) => ({
+			...note,
+			position: idx,
+		}));
+
+		// porównujemy z pozycją TEJ SAMEJ notatki przed przeciągnięciem (po id),
+		// a nie z notatką, która wcześniej stała na tym samym indeksie
+		const oldPosition = new Map(previous.map((n) => [n.id, n.position]));
+		const changedPositions = updatedNotes
+			.filter((note) => oldPosition.get(note.id) !== note.position)
+			.map(({ id, position }) => ({ id, position }));
+
+		setNotes(updatedNotes);
+
+		// updateNotePositions nie rzuca wyjątku — zwraca { error }
+		const { error } = await updateNotePositions(changedPositions);
+		if (error) {
+			setNotes(previous);
+			setError('Nie udało się zapisać kolejności');
+		}
 	}
 
 	function handleDragEnd() {
@@ -277,13 +368,16 @@ export default function NoteFolderPage() {
 						</h1>
 					</div>
 				</div>
-				<button
-					data-testid='open-chapter-button'
-					className='btn btn-primary'
-					onClick={() => navigate(`/notes/${folderId}/chapter`)}
-				>
-					<Icons.book size={16} /> Rozdział
-				</button>
+				<div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+					<NotesHelpButton view='folder' />
+					<button
+						data-testid='open-chapter-button'
+						className='btn btn-primary'
+						onClick={() => navigate(`/notes/${folderId}/chapter`)}
+					>
+						<Icons.book size={16} /> Rozdział
+					</button>
+				</div>
 			</div>
 
 			{/* import */}
@@ -399,7 +493,10 @@ export default function NoteFolderPage() {
 				</div>
 			) : (
 				<>
-					<div className='muted' style={{ fontSize: 12.5, margin: '0 4px 10px' }}>
+					<div
+						className='muted'
+						style={{ fontSize: 12.5, margin: '0 4px 10px' }}
+					>
 						{notes.length} {noteWord(notes.length)} · przeciągnij, żeby zmienić
 						kolejność w Rozdziale
 					</div>
@@ -461,6 +558,15 @@ export default function NoteFolderPage() {
 										{note.source_name} · {note.content.slice(0, 120)}
 									</div>
 								</div>
+								<button
+									data-testid='edit-note-button'
+									className='iconbtn'
+									style={{ width: 30, height: 30, flexShrink: 0 }}
+									onClick={() => navigate(`/notes/${folderId}/${note.id}/edit`)}
+									title='Edytuj notatkę'
+								>
+									<Icons.pencil size={13} />
+								</button>
 								<button
 									data-testid='delete-note-button'
 									className='iconbtn'
